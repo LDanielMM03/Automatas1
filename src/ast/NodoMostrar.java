@@ -1,14 +1,17 @@
 package ast;
 
-/** Nodo de salida: mostrar(expresion); */
+/** Nodo de salida: print(expresion); o println(expresion); */
 public class NodoMostrar extends Nodo {
 
-    private final Nodo expresion;
+    private final Nodo    expresion;
+    private final boolean conSaltoDeLinea;
 
-    public NodoMostrar(Nodo expresion, int linea, int columna) {
+    public NodoMostrar(Nodo expresion, boolean conSaltoDeLinea, int linea, int columna) {
         super(linea, columna);
-        this.expresion = expresion;
+        this.expresion       = expresion;
+        this.conSaltoDeLinea = conSaltoDeLinea;
     }
 
-    public Nodo getExpresion() { return expresion; }
+    public Nodo    getExpresion()       { return expresion;       }
+    public boolean tienesSaltoDeLinea() { return conSaltoDeLinea; }
 }

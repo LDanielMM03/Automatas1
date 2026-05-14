@@ -9,6 +9,7 @@ import ast.NodoPrograma;
 import excepciones.ErrorLexico;
 import excepciones.ErrorSintactico;
 import excepciones.ErrorSemantico;
+import excepciones.ErrorDivisionPorCero;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -237,6 +238,8 @@ public class InterfazGrafica extends JFrame {
             resultadosOutput.setText("[ERROR SINTACTICO]\n\n" + ex.getMessage());
         } catch (ErrorSemantico ex) {
             resultadosOutput.setText("[ERROR SEMANTICO]\n\n" + ex.getMessage());
+        } catch (ErrorDivisionPorCero ex) {
+            resultadosOutput.setText("[ERROR EN EJECUCION]\n\n" + ex.getMessage());
         }
     }
 
@@ -254,7 +257,8 @@ public class InterfazGrafica extends JFrame {
             case SI:             return "'" + v + "' es palabra reservada  →  condicional if";
             case SINO:           return "'" + v + "' es palabra reservada  →  condicional else";
             case MIENTRAS:       return "'" + v + "' es palabra reservada  →  bucle while";
-            case MOSTRAR:        return "'" + v + "' es palabra reservada  →  salida System.out.println";
+            case PRINT:          return "'" + v + "' es palabra reservada  →  salida sin salto de linea";
+            case PRINTLN:        return "'" + v + "' es palabra reservada  →  salida con salto de linea";
             case LIT_VERDADERO:  return "'" + v + "' es literal booleano verdadero";
             case LIT_FALSO:      return "'" + v + "' es literal booleano falso";
             case ASIGNACION:     return "'" + v + "' es operador de asignacion";
@@ -299,12 +303,13 @@ public class InterfazGrafica extends JFrame {
             case SI:
             case SINO:
             case MIENTRAS:
-            case MOSTRAR:
+            case PRINT:
+            case PRINTLN:
             case LIT_VERDADERO:
             case LIT_FALSO:
             case ASIGNACION:     return "palabra reservada";
-            case IDENTIFICADOR:  return "[a-zA-Z_][a-zA-Z0-9_]*";
-            case LIT_ENTERO:     return "[0-9]+";
+            case IDENTIFICADOR:  return "[a-z]";
+            case LIT_ENTERO:     return "[0-9]";
             case LIT_DECIMAL:    return "[0-9]+\\.[0-9]+";
             case LIT_CADENA:     return "\"[^\"]*\"";
             case SUMA:           return "\\+";
@@ -321,7 +326,7 @@ public class InterfazGrafica extends JFrame {
             case Y:              return "&&";
             case O:              return "\\|\\|";
             case NO:             return "!";
-            case PUNTO_COMA:     return ";";
+            case PUNTO_COMA:     return "break";
             case COMA:           return ",";
             case PARENTESIS_IZQ: return "\\(";
             case PARENTESIS_DER: return "\\)";

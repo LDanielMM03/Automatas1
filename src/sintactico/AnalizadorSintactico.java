@@ -2,6 +2,9 @@ package sintactico;
 
 import ast.*;
 import excepciones.ErrorSintactico;
+import excepciones.ErrorTokenEsperado;
+import excepciones.ErrorExpresionInvalida;
+import excepciones.ErrorSentenciaInvalida;
 import tokens.TipoToken;
 import tokens.Token;
 import java.util.ArrayList;
@@ -58,10 +61,7 @@ public class AnalizadorSintactico {
     private Token consumir(TipoToken esperado, String descripcion) throws ErrorSintactico {
         Token t = actual();
         if (t.getTipo() != esperado)
-            throw new ErrorSintactico(
-                "Se esperaba " + descripcion + " pero se encontro '" + t.getValor() + "'",
-                t.getLinea(), t.getColumna()
-            );
+            throw new ErrorTokenEsperado(descripcion, t.getValor(), t.getLinea(), t.getColumna());
         return consumir();
     }
 
@@ -100,13 +100,10 @@ public class AnalizadorSintactico {
         if (verifica(TipoToken.IDENTIFICADOR)) return parsearAsignacion();
         if (verifica(TipoToken.SI))            return parsearSi();
         if (verifica(TipoToken.MIENTRAS))      return parsearMientras();
-        if (verifica(TipoToken.MOSTRAR))       return parsearMostrar();
+        if (verifica(TipoToken.PRINT) || verifica(TipoToken.PRINTLN)) return parsearMostrar();
 
         Token t = actual();
-        throw new ErrorSintactico(
-            "Sentencia no valida: token inesperado '" + t.getValor() + "'",
-            t.getLinea(), t.getColumna()
-        );
+        throw new ErrorSentenciaInvalida(t.getValor(), t.getLinea(), t.getColumna());
     }
 
     // ─── Declaracion ─────────────────────────────────────────────────────────
@@ -177,18 +174,20 @@ public class AnalizadorSintactico {
         return new NodoMientras(condicion, cuerpo, lin, col);
     }
 
-    // ─── System.out.println ──────────────────────────────────────────────────
+    // ─── print / println ─────────────────────────────────────────────────────
 
     private NodoMostrar parsearMostrar() throws ErrorSintactico {
-        Token mTok = consumir(TipoToken.MOSTRAR, "'System.out.println'");
+        boolean conSalto = verifica(TipoToken.PRINTLN);
+        Token mTok = consumir();
         int lin = mTok.getLinea(), col = mTok.getColumna();
+        String nombre = conSalto ? "println" : "print";
 
-        consumir(TipoToken.PARENTESIS_IZQ, "'(' despues de 'System.out.println'");
+        consumir(TipoToken.PARENTESIS_IZQ, "'(' despues de '" + nombre + "'");
         Nodo expresion = parsearExpresion();
-        consumir(TipoToken.PARENTESIS_DER, "')' en System.out.println");
-        consumir(TipoToken.PUNTO_COMA,     "';' al final de System.out.println");
+        consumir(TipoToken.PARENTESIS_DER, "')' en '" + nombre + "'");
+        consumir(TipoToken.PUNTO_COMA,     "';' al final de '" + nombre + "'");
 
-        return new NodoMostrar(expresion, lin, col);
+        return new NodoMostrar(expresion, conSalto, lin, col);
     }
 
     // ─── Bloque ──────────────────────────────────────────────────────────────
@@ -330,10 +329,7 @@ public class AnalizadorSintactico {
                 return expr;
 
             default:
-                throw new ErrorSintactico(
-                    "Expresion no valida: token inesperado '" + t.getValor() + "'",
-                    t.getLinea(), t.getColumna()
-                );
+                throw new ErrorExpresionInvalida(t.getValor(), t.getLinea(), t.getColumna());
         }
     }
 }

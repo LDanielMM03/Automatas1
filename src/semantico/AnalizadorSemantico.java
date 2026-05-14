@@ -2,6 +2,11 @@ package semantico;
 
 import ast.*;
 import excepciones.ErrorSemantico;
+import excepciones.ErrorVariableNoDeclarada;
+import excepciones.ErrorVariableRedeclarada;
+import excepciones.ErrorTiposIncompatibles;
+import excepciones.ErrorCondicionNoBoolena;
+import excepciones.ErrorOperadorInvalido;
 
 /**
  * Analizador Semantico.
@@ -88,17 +93,12 @@ public class AnalizadorSemantico {
         String tipo   = nodo.getTipo();
 
         if (ambito.estaDeclaradaLocalmente(nombre))
-            throw new ErrorSemantico(
-                "La variable '" + nombre + "' ya fue declarada en este ambito",
-                nodo.getLinea(), nodo.getColumna());
+            throw new ErrorVariableRedeclarada(nombre, nodo.getLinea(), nodo.getColumna());
 
         if (nodo.tieneValor()) {
             String tipoExpr = analizarNodo(nodo.getExpresion());
             if (!sonCompatibles(tipo, tipoExpr))
-                throw new ErrorSemantico(
-                    "Tipos incompatibles: no se puede asignar '" + tipoExpr +
-                    "' a una variable de tipo '" + tipo + "'",
-                    nodo.getLinea(), nodo.getColumna());
+                throw new ErrorTiposIncompatibles(tipoExpr, tipo, nodo.getLinea(), nodo.getColumna());
         }
 
         ambito.declarar(nombre, tipo);
@@ -113,18 +113,13 @@ public class AnalizadorSemantico {
         String nombre = nodo.getNombre();
 
         if (!ambito.estaDeclarada(nombre))
-            throw new ErrorSemantico(
-                "La variable '" + nombre + "' no ha sido declarada",
-                nodo.getLinea(), nodo.getColumna());
+            throw new ErrorVariableNoDeclarada(nombre, nodo.getLinea(), nodo.getColumna());
 
         String tipoVar  = ambito.obtener(nombre).getTipo();
         String tipoExpr = analizarNodo(nodo.getExpresion());
 
         if (!sonCompatibles(tipoVar, tipoExpr))
-            throw new ErrorSemantico(
-                "Tipos incompatibles: no se puede asignar '" + tipoExpr +
-                "' a la variable '" + nombre + "' de tipo '" + tipoVar + "'",
-                nodo.getLinea(), nodo.getColumna());
+            throw new ErrorTiposIncompatibles(tipoExpr, tipoVar, nodo.getLinea(), nodo.getColumna());
 
         return "void";
     }
@@ -137,9 +132,7 @@ public class AnalizadorSemantico {
         String tipoCond = analizarNodo(nodo.getCondicion());
 
         if (!tipoCond.equals("boolean"))
-            throw new ErrorSemantico(
-                "La condicion del 'if' debe ser de tipo boolean, pero es '" + tipoCond + "'",
-                nodo.getLinea(), nodo.getColumna());
+            throw new ErrorCondicionNoBoolena("if", tipoCond, nodo.getLinea(), nodo.getColumna());
 
         analizarBloque(nodo.getCuerpoVerdad());
         if (nodo.tieneSino()) analizarBloque(nodo.getCuerpoFalso());
@@ -153,9 +146,7 @@ public class AnalizadorSemantico {
         String tipoCond = analizarNodo(nodo.getCondicion());
 
         if (!tipoCond.equals("boolean"))
-            throw new ErrorSemantico(
-                "La condicion del 'while' debe ser de tipo boolean, pero es '" + tipoCond + "'",
-                nodo.getLinea(), nodo.getColumna());
+            throw new ErrorCondicionNoBoolena("while", tipoCond, nodo.getLinea(), nodo.getColumna());
 
         analizarBloque(nodo.getCuerpo());
     }
@@ -191,9 +182,7 @@ public class AnalizadorSemantico {
         String nombre = nodo.getNombre();
 
         if (!ambito.estaDeclarada(nombre))
-            throw new ErrorSemantico(
-                "La variable '" + nombre + "' no ha sido declarada",
-                nodo.getLinea(), nodo.getColumna());
+            throw new ErrorVariableNoDeclarada(nombre, nodo.getLinea(), nodo.getColumna());
 
         return ambito.obtener(nombre).getTipo();
     }
@@ -213,44 +202,31 @@ public class AnalizadorSemantico {
                     return "Pez";
                 if (esNumerico(tipoIzq) && esNumerico(tipoDer))
                     return tipoResultanteNumerico(tipoIzq, tipoDer);
-                throw new ErrorSemantico(
-                    "Operador '+' no es aplicable entre '" + tipoIzq + "' y '" + tipoDer + "'",
-                    nodo.getLinea(), nodo.getColumna());
+                throw new ErrorTiposIncompatibles("+", tipoIzq, tipoDer, nodo.getLinea(), nodo.getColumna());
 
             case "-": case "*": case "/": case "%":
                 if (!esNumerico(tipoIzq))
-                    throw new ErrorSemantico(
-                        "Operador '" + op + "' requiere tipo numerico, pero el lado izquierdo es '" + tipoIzq + "'",
-                        nodo.getLinea(), nodo.getColumna());
+                    throw new ErrorOperadorInvalido(op, "izquierdo", tipoIzq, nodo.getLinea(), nodo.getColumna());
                 if (!esNumerico(tipoDer))
-                    throw new ErrorSemantico(
-                        "Operador '" + op + "' requiere tipo numerico, pero el lado derecho es '" + tipoDer + "'",
-                        nodo.getLinea(), nodo.getColumna());
+                    throw new ErrorOperadorInvalido(op, "derecho", tipoDer, nodo.getLinea(), nodo.getColumna());
                 return tipoResultanteNumerico(tipoIzq, tipoDer);
 
             case "==": case "!=":
                 if (!tipoIzq.equals(tipoDer) && !(esNumerico(tipoIzq) && esNumerico(tipoDer)))
-                    throw new ErrorSemantico(
-                        "No se pueden comparar tipos '" + tipoIzq + "' y '" + tipoDer + "' con '" + op + "'",
-                        nodo.getLinea(), nodo.getColumna());
+                    throw new ErrorTiposIncompatibles(op, tipoIzq, tipoDer, nodo.getLinea(), nodo.getColumna());
                 return "boolean";
 
             case ">": case "<": case ">=": case "<=":
                 if (!esNumerico(tipoIzq) || !esNumerico(tipoDer))
-                    throw new ErrorSemantico(
-                        "Operador relacional '" + op + "' solo aplica a tipos numericos",
-                        nodo.getLinea(), nodo.getColumna());
+                    throw new ErrorOperadorInvalido(op, "relacional: solo aplica a tipos numericos",
+                                                    nodo.getLinea(), nodo.getColumna());
                 return "boolean";
 
             case "&&": case "||":
                 if (!tipoIzq.equals("boolean"))
-                    throw new ErrorSemantico(
-                        "Operador '" + op + "' requiere boolean, lado izquierdo es '" + tipoIzq + "'",
-                        nodo.getLinea(), nodo.getColumna());
+                    throw new ErrorOperadorInvalido(op, "izquierdo", tipoIzq, nodo.getLinea(), nodo.getColumna());
                 if (!tipoDer.equals("boolean"))
-                    throw new ErrorSemantico(
-                        "Operador '" + op + "' requiere boolean, lado derecho es '" + tipoDer + "'",
-                        nodo.getLinea(), nodo.getColumna());
+                    throw new ErrorOperadorInvalido(op, "derecho", tipoDer, nodo.getLinea(), nodo.getColumna());
                 return "boolean";
 
             default:
@@ -270,16 +246,12 @@ public class AnalizadorSemantico {
         switch (nodo.getOperador()) {
             case "!":
                 if (!tipoOp.equals("boolean"))
-                    throw new ErrorSemantico(
-                        "Operador '!' solo aplica a boolean, se encontro '" + tipoOp + "'",
-                        nodo.getLinea(), nodo.getColumna());
+                    throw new ErrorOperadorInvalido("!", tipoOp, nodo.getLinea(), nodo.getColumna());
                 return "boolean";
 
             case "-":
                 if (!esNumerico(tipoOp))
-                    throw new ErrorSemantico(
-                        "Operador negacion '-' solo aplica a numeros, se encontro '" + tipoOp + "'",
-                        nodo.getLinea(), nodo.getColumna());
+                    throw new ErrorOperadorInvalido("-", tipoOp, nodo.getLinea(), nodo.getColumna());
                 return tipoOp;
 
             default:

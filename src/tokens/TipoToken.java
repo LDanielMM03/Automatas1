@@ -47,7 +47,8 @@ public enum TipoToken {
     MIENTRAS,        // while
 
     // ── Entrada / Salida ──────────────────────────────────────────────────────
-    MOSTRAR,         // System.out.println
+    PRINT,           // print   (sin salto de linea)
+    PRINTLN,         // println (con salto de linea)
 
     // ── Puntuacion ────────────────────────────────────────────────────────────
     PUNTO_COMA,      // ;

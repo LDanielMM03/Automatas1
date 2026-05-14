@@ -1,6 +1,7 @@
 package principal;
 
 import ast.*;
+import excepciones.ErrorDivisionPorCero;
 import java.util.*;
 
 public class Interprete {
@@ -57,8 +58,10 @@ public class Interprete {
             return;
         }
         if (nodo instanceof NodoMostrar) {
-            Object val = evaluar(((NodoMostrar) nodo).getExpresion());
-            salida.append(formatear(val)).append("\n");
+            NodoMostrar m = (NodoMostrar) nodo;
+            Object val = evaluar(m.getExpresion());
+            salida.append(formatear(val));
+            if (m.tienesSaltoDeLinea()) salida.append("\n");
             return;
         }
         if (nodo instanceof NodoBloque) {
@@ -93,9 +96,11 @@ public class Interprete {
     }
 
     private Object evaluarBinario(NodoBinario nodo) {
-        String op  = nodo.getOperador();
-        Object izq = evaluar(nodo.getIzquierda());
-        Object der = evaluar(nodo.getDerecha());
+        String op   = nodo.getOperador();
+        Object izq  = evaluar(nodo.getIzquierda());
+        Object der  = evaluar(nodo.getDerecha());
+        int    lin  = nodo.getLinea();
+        int    col  = nodo.getColumna();
 
         // Logicos
         if (op.equals("&&")) return (Boolean) izq && (Boolean) der;
@@ -115,7 +120,7 @@ public class Interprete {
                 case "-":  if (esDecimal) return a - b; return (int)(a - b);
                 case "*":  if (esDecimal) return a * b; return (int)(a * b);
                 case "/":
-                    if (b == 0) throw new RuntimeException("Division por cero");
+                    if (b == 0) throw new ErrorDivisionPorCero(lin, col);
                     if (esDecimal) return a / b; return (int)(a / b);
                 case "%":  if (esDecimal) return a % b; return (int)(a % b);
                 case "==": return a == b;

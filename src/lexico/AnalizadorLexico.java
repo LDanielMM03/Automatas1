@@ -1,6 +1,10 @@
 package lexico;
 
 import excepciones.ErrorLexico;
+import excepciones.ErrorCadenaNoTerminada;
+import excepciones.ErrorCaracterDesconocido;
+import excepciones.ErrorSecuenciaEscapeInvalida;
+import excepciones.ErrorRangoNumero;
 import tokens.TipoToken;
 import tokens.Token;
 import java.util.ArrayList;
@@ -91,22 +95,36 @@ public class AnalizadorLexico {
     //  Leer numero entero o decimal
     // =========================================================================
 
-    private Token leerNumero() {
+    private Token leerNumero() throws ErrorLexico {
         int lin = linea, col = columna;
-        StringBuilder sb = new StringBuilder();
+        StringBuilder parteEntera = new StringBuilder();
         boolean esDecimal = false;
 
         while (hayMas() && Character.isDigit(actual()))
-            sb.append(consumir());
+            parteEntera.append(consumir());
+
+        if (parteEntera.length() > 10)
+            throw new ErrorRangoNumero(
+                "la parte entera tiene " + parteEntera.length() +
+                " digitos (maximo 10)", lin, col);
 
         if (hayMas() && actual() == '.' && Character.isDigit(siguiente())) {
             esDecimal = true;
-            sb.append(consumir());
+            consumir(); // consume el punto
+            StringBuilder parteDecimal = new StringBuilder();
             while (hayMas() && Character.isDigit(actual()))
-                sb.append(consumir());
+                parteDecimal.append(consumir());
+
+            if (parteDecimal.length() > 8)
+                throw new ErrorRangoNumero(
+                    "la parte decimal tiene " + parteDecimal.length() +
+                    " digitos (maximo 8)", lin, col);
+
+            parteEntera.append('.').append(parteDecimal);
         }
 
         TipoToken tipo = esDecimal ? TipoToken.LIT_DECIMAL : TipoToken.LIT_ENTERO;
+        StringBuilder sb = parteEntera;
         return new Token(tipo, sb.toString(), lin, col);
     }
 
@@ -121,8 +139,7 @@ public class AnalizadorLexico {
 
         while (hayMas() && actual() != '"') {
             if (actual() == '\n')
-                throw new ErrorLexico(
-                    "Cadena de texto no cerrada antes del fin de linea", lin, col);
+                throw new ErrorCadenaNoTerminada(lin, col);
 
             if (actual() == '\\') {
                 consumir(); // consume la barra
@@ -132,8 +149,7 @@ public class AnalizadorLexico {
                     case '"':  sb.append('"');  consumir(); break;
                     case '\\': sb.append('\\'); consumir(); break;
                     default:
-                        throw new ErrorLexico(
-                            "Secuencia de escape desconocida: \\" + actual(), linea, columna);
+                        throw new ErrorSecuenciaEscapeInvalida(actual(), linea, columna);
                 }
             } else {
                 sb.append(consumir());
@@ -141,8 +157,7 @@ public class AnalizadorLexico {
         }
 
         if (!hayMas())
-            throw new ErrorLexico(
-                "Cadena de texto no cerrada, se esperaba '\"'", lin, col);
+            throw new ErrorCadenaNoTerminada(lin, col);
 
         consumir(); // consume la comilla de cierre "
         return new Token(TipoToken.LIT_CADENA, sb.toString(), lin, col);
@@ -173,30 +188,9 @@ public class AnalizadorLexico {
             case "else":    return new Token(TipoToken.SINO,         pal, lin, col);
             case "while":   return new Token(TipoToken.MIENTRAS,     pal, lin, col);
 
-            // Salida: System.out.println
-            case "System": {
-                if (!hayMas() || actual() != '.')
-                    throw new ErrorLexico(
-                        "Se esperaba '.out.println' despues de 'System'", lin, col);
-                consumir(); // .
-                StringBuilder part = new StringBuilder();
-                while (hayMas() && Character.isLetterOrDigit(actual()))
-                    part.append(consumir());
-                if (!part.toString().equals("out"))
-                    throw new ErrorLexico(
-                        "Se esperaba 'out' despues de 'System.'", lin, col);
-                if (!hayMas() || actual() != '.')
-                    throw new ErrorLexico(
-                        "Se esperaba '.println' despues de 'System.out'", lin, col);
-                consumir(); // .
-                part = new StringBuilder();
-                while (hayMas() && Character.isLetterOrDigit(actual()))
-                    part.append(consumir());
-                if (!part.toString().equals("println"))
-                    throw new ErrorLexico(
-                        "Se esperaba 'println' despues de 'System.out.'", lin, col);
-                return new Token(TipoToken.MOSTRAR, "System.out.println", lin, col);
-            }
+            // Salida
+            case "print":   return new Token(TipoToken.PRINT,   pal, lin, col);
+            case "println": return new Token(TipoToken.PRINTLN, pal, lin, col);
 
             // Literales booleanos
             case "true":    return new Token(TipoToken.LIT_VERDADERO, pal, lin, col);
@@ -269,7 +263,7 @@ public class AnalizadorLexico {
                 return new Token(TipoToken.MENOR, "<", lin, col);
 
             default:
-                throw new ErrorLexico("Caracter desconocido: '" + c + "'", lin, col);
+                throw new ErrorCaracterDesconocido(c, lin, col);
         }
     }
 }

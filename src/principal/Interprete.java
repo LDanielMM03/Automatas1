@@ -178,7 +178,7 @@ public class Interprete {
         switch (tipo) {
             case "perro":   return 0;
             case "gato":    return 0.0;
-            case "Pez":     return "";
+            case "pez":     return "";
             case "boolean": return false;
             default:        return null;
         }

@@ -5,6 +5,7 @@ import excepciones.ErrorCadenaNoTerminada;
 import excepciones.ErrorCaracterDesconocido;
 import excepciones.ErrorSecuenciaEscapeInvalida;
 import excepciones.ErrorRangoNumero;
+import excepciones.ErrorDecimalIncompleto;
 import tokens.TipoToken;
 import tokens.Token;
 import java.util.ArrayList;
@@ -16,12 +17,17 @@ public class AnalizadorLexico {
     private int pos;
     private int linea;
     private int columna;
+    private final List<Token> tokensParciales = new ArrayList<>();
 
     public AnalizadorLexico(String fuente) {
         this.fuente  = fuente;
         this.pos     = 0;
         this.linea   = 1;
         this.columna = 1;
+    }
+
+    public List<Token> getTokensParciales() {
+        return tokensParciales;
     }
 
     // =========================================================================
@@ -37,14 +43,17 @@ public class AnalizadorLexico {
 
             char c = actual();
 
+            Token tok;
             if (Character.isDigit(c))
-                lista.add(leerNumero());
+                tok = leerNumero();
             else if (c == '"')
-                lista.add(leerCadena());
+                tok = leerCadena();
             else if (Character.isLetter(c) || c == '_')
-                lista.add(leerPalabra());
+                tok = leerPalabra();
             else
-                lista.add(leerSimbolo());
+                tok = leerSimbolo();
+            tokensParciales.add(tok);
+            lista.add(tok);
         }
 
         lista.add(new Token(TipoToken.EOF, "", linea, columna));
@@ -108,19 +117,23 @@ public class AnalizadorLexico {
                 "la parte entera tiene " + parteEntera.length() +
                 " digitos (maximo 10)", lin, col);
 
-        if (hayMas() && actual() == '.' && Character.isDigit(siguiente())) {
-            esDecimal = true;
-            consumir(); // consume el punto
-            StringBuilder parteDecimal = new StringBuilder();
-            while (hayMas() && Character.isDigit(actual()))
-                parteDecimal.append(consumir());
+        if (hayMas() && actual() == '.') {
+            if (Character.isDigit(siguiente())) {
+                esDecimal = true;
+                consumir(); // consume el punto
+                StringBuilder parteDecimal = new StringBuilder();
+                while (hayMas() && Character.isDigit(actual()))
+                    parteDecimal.append(consumir());
 
-            if (parteDecimal.length() > 8)
-                throw new ErrorRangoNumero(
-                    "la parte decimal tiene " + parteDecimal.length() +
-                    " digitos (maximo 8)", lin, col);
+                if (parteDecimal.length() > 8)
+                    throw new ErrorRangoNumero(
+                        "la parte decimal tiene " + parteDecimal.length() +
+                        " digitos (maximo 8)", lin, col);
 
-            parteEntera.append('.').append(parteDecimal);
+                parteEntera.append('.').append(parteDecimal);
+            } else {
+                throw new ErrorDecimalIncompleto(lin, col);
+            }
         }
 
         TipoToken tipo = esDecimal ? TipoToken.LIT_DECIMAL : TipoToken.LIT_ENTERO;
@@ -180,7 +193,7 @@ public class AnalizadorLexico {
             // Tipos de dato
             case "perro":   return new Token(TipoToken.ENTERO,       pal, lin, col);
             case "gato":    return new Token(TipoToken.DECIMAL,      pal, lin, col);
-            case "Pez":     return new Token(TipoToken.CADENA_TIPO,  pal, lin, col);
+            case "pez":     return new Token(TipoToken.CADENA_TIPO,  pal, lin, col);
             case "boolean": return new Token(TipoToken.BOOLEANO,     pal, lin, col);
 
             // Control de flujo

@@ -120,6 +120,11 @@ public class AnalizadorSintactico {
         if (verifica(TipoToken.ASIGNACION)) {
             consumir();                                  // consume 'e'
             expresion = parsearExpresion();
+        } else if (!verifica(TipoToken.PUNTO_COMA) && !verifica(TipoToken.EOF)) {
+            Token t = actual();
+            throw new ErrorSintactico(
+                "Falta el operador de asignacion 'e' antes de '" + t.getValor() + "'",
+                t.getLinea(), t.getColumna());
         }
 
         consumir(TipoToken.PUNTO_COMA, "';' al final de la declaracion");
@@ -307,7 +312,7 @@ public class AnalizadorSintactico {
 
             case LIT_CADENA:
                 consumir();
-                return new NodoLiteral(t.getValor(), "Pez",
+                return new NodoLiteral(t.getValor(), "pez",
                                        t.getLinea(), t.getColumna());
 
             case LIT_VERDADERO:

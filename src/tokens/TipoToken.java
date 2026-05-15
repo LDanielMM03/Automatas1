@@ -5,7 +5,7 @@ public enum TipoToken {
     // ── Tipos de dato del lenguaje personalizado ──────────────────────────────
     ENTERO,          // perro   (reemplaza a int)
     DECIMAL,         // gato    (reemplaza a double)
-    CADENA_TIPO,     // Pez     (reemplaza a String)
+    CADENA_TIPO,     // pez     (reemplaza a String)
     BOOLEANO,        // boolean
 
     // ── Literales ─────────────────────────────────────────────────────────────

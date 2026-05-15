@@ -191,23 +191,12 @@ public class InterfazGrafica extends JFrame {
             return;
         }
 
+        AnalizadorLexico lexer = new AnalizadorLexico(codigo);
         try {
             // Fase 1: Lexico
-            AnalizadorLexico lexer = new AnalizadorLexico(codigo);
             List<Token> tokens = lexer.tokenizar();
 
-            StringBuilder console = new StringBuilder();
-            for (Token t : tokens) {
-                if (t.getTipo() == TipoToken.EOF) continue;
-                modeloTabla.addRow(new Object[]{
-                    t.getValor(),
-                    t.getValor(),
-                    obtenerPatron(t),
-                    esPalabraReservada(t.getTipo()) ? "Si" : "No"
-                });
-                console.append(describir(t)).append("\n");
-            }
-            consoleOutput.setText(console.toString());
+            llenarTablaYConsola(tokens);
 
             // Fase 2: Sintactico
             AnalizadorSintactico parser = new AnalizadorSintactico(tokens);
@@ -233,6 +222,7 @@ public class InterfazGrafica extends JFrame {
             resultadosOutput.setText(resultado.toString());
 
         } catch (ErrorLexico ex) {
+            llenarTablaYConsola(lexer.getTokensParciales());
             resultadosOutput.setText("[ERROR LEXICO]\n\n" + ex.getMessage());
         } catch (ErrorSintactico ex) {
             resultadosOutput.setText("[ERROR SINTACTICO]\n\n" + ex.getMessage());
@@ -244,6 +234,25 @@ public class InterfazGrafica extends JFrame {
     }
 
     // =========================================================================
+    //  Llenar tabla y consola con una lista de tokens
+    // =========================================================================
+
+    private void llenarTablaYConsola(List<Token> tokens) {
+        StringBuilder console = new StringBuilder();
+        for (Token t : tokens) {
+            if (t.getTipo() == TipoToken.EOF) continue;
+            modeloTabla.addRow(new Object[]{
+                t.getValor(),
+                t.getValor(),
+                obtenerPatron(t),
+                esPalabraReservada(t.getTipo()) ? "Si" : "No"
+            });
+            console.append(describir(t)).append("\n");
+        }
+        consoleOutput.setText(console.toString());
+    }
+
+    // =========================================================================
     //  Descripcion humana de cada token (panel inferior izquierdo)
     // =========================================================================
 
@@ -252,7 +261,7 @@ public class InterfazGrafica extends JFrame {
         switch (t.getTipo()) {
             case ENTERO:         return "'" + v + "' es palabra reservada  →  tipo perro (int)";
             case DECIMAL:        return "'" + v + "' es palabra reservada  →  tipo gato (double)";
-            case CADENA_TIPO:    return "'" + v + "' es palabra reservada  →  tipo Pez (String)";
+            case CADENA_TIPO:    return "'" + v + "' es palabra reservada  →  tipo pez (String)";
             case BOOLEANO:       return "'" + v + "' es palabra reservada  →  tipo boolean";
             case SI:             return "'" + v + "' es palabra reservada  →  condicional if";
             case SINO:           return "'" + v + "' es palabra reservada  →  condicional else";
@@ -309,9 +318,9 @@ public class InterfazGrafica extends JFrame {
             case LIT_FALSO:
             case ASIGNACION:     return "palabra reservada";
             case IDENTIFICADOR:  return "[a-z]";
-            case LIT_ENTERO:     return "[0-9]";
-            case LIT_DECIMAL:    return "[0-9]+\\.[0-9]+";
-            case LIT_CADENA:     return "\"[^\"]*\"";
+            case LIT_ENTERO:     return "^(0-9)[1,10]$";
+            case LIT_DECIMAL:    return "^(0-9)[1,10]\\.(0-9)[1,8]$";
+            case LIT_CADENA:     return "^\"[a,z 0-9]+\"$";
             case SUMA:           return "\\+";
             case RESTA:          return "-";
             case MULTIPLICACION: return "\\*";

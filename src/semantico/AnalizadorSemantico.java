@@ -38,7 +38,7 @@ public class AnalizadorSemantico {
 
     // =========================================================================
     //  Dispatcher central
-    //  Retorna el tipo resultante ("perro","gato","Pez","boolean") o "void".
+    //  Retorna el tipo resultante ("perro","gato","pez","boolean") o "void".
     // =========================================================================
 
     private String analizarNodo(Nodo nodo) throws ErrorSemantico {
@@ -198,8 +198,8 @@ public class AnalizadorSemantico {
 
         switch (op) {
             case "+":
-                if (tipoIzq.equals("Pez") && tipoDer.equals("Pez"))
-                    return "Pez";
+                if (tipoIzq.equals("pez") && tipoDer.equals("pez"))
+                    return "pez";
                 if (esNumerico(tipoIzq) && esNumerico(tipoDer))
                     return tipoResultanteNumerico(tipoIzq, tipoDer);
                 throw new ErrorTiposIncompatibles("+", tipoIzq, tipoDer, nodo.getLinea(), nodo.getColumna());
@@ -274,8 +274,6 @@ public class AnalizadorSemantico {
     }
 
     private boolean sonCompatibles(String tipoVar, String tipoExpr) {
-        if (tipoVar.equals(tipoExpr))                          return true;
-        if (tipoVar.equals("gato") && tipoExpr.equals("perro")) return true;
-        return false;
+        return tipoVar.equals(tipoExpr);
     }
 }

@@ -6,14 +6,6 @@
             <file>file:/Users/luisdaniel/NetBeansProjects/LenguajePropio/src/principal/InterfazGrafica.java</file>
             <file>file:/Users/luisdaniel/NetBeansProjects/LenguajePropio/src/principal/Interprete.java</file>
             <file>file:/Users/luisdaniel/NetBeansProjects/LenguajePropio/src/principal/Main.java</file>
-            <file>file:/Users/luisdaniel/NetBeansProjects/LenguajePropio/src/excepciones/ErrorCadenaNoTerminada.java</file>
-            <file>file:/Users/luisdaniel/NetBeansProjects/LenguajePropio/src/excepciones/ErrorCaracterDesconocido.java</file>
-            <file>file:/Users/luisdaniel/NetBeansProjects/LenguajePropio/src/excepciones/ErrorCondicionNoBoolena.java</file>
-            <file>file:/Users/luisdaniel/NetBeansProjects/LenguajePropio/src/excepciones/ErrorDivisionPorCero.java</file>
-            <file>file:/Users/luisdaniel/NetBeansProjects/LenguajePropio/src/ast/Nodo.java</file>
-            <file>file:/Users/luisdaniel/NetBeansProjects/LenguajePropio/src/ast/NodoAsignacion.java</file>
-            <file>file:/Users/luisdaniel/NetBeansProjects/LenguajePropio/src/semantico/AnalizadorSemantico.java</file>
-            <file>file:/Users/luisdaniel/NetBeansProjects/LenguajePropio/src/semantico/TablaSimbolos.java</file>
         </group>
     </open-files>
 </project-private>

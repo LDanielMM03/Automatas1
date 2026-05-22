@@ -28,6 +28,7 @@ public class InterfazGrafica extends JFrame {
     private DefaultTableModel modeloTabla;
     private JTextArea consoleOutput;
     private JTextArea resultadosOutput;
+    private JTextArea gramaticaOutput;
 
     private static final Font MONO = new Font(Font.MONOSPACED, Font.PLAIN, 13);
     private static final Color COLOR_LINEAS = new Color(230, 230, 230);
@@ -87,10 +88,7 @@ public class InterfazGrafica extends JFrame {
         leftPanel.add(editorScroll, BorderLayout.CENTER);
         leftPanel.add(btnAnalizar, BorderLayout.SOUTH);
 
-        // ─── Panel derecho: tabla de tokens ─────────────────────────────────
-        JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBorder(BorderFactory.createTitledBorder("Tabla de Tokens"));
-
+        // ─── Panel derecho: pestanas (Tokens + Gramatica) ───────────────────
         String[] columnas = {"Token", "Lexema", "Patron", "Palabra reservada"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             public boolean isCellEditable(int row, int col) { return false; }
@@ -123,10 +121,53 @@ public class InterfazGrafica extends JFrame {
         tablaTokens.getColumnModel().getColumn(2).setPreferredWidth(180);
         tablaTokens.getColumnModel().getColumn(3).setPreferredWidth(120);
 
-        rightPanel.add(new JScrollPane(tablaTokens), BorderLayout.CENTER);
+        JPanel tokensPanel = new JPanel(new BorderLayout());
+        tokensPanel.add(new JScrollPane(tablaTokens), BorderLayout.CENTER);
+
+        gramaticaOutput = makeOutputArea(Color.WHITE);
+
+        // ─── Diccionario (estatico) ──────────────────────────────────────────
+        String[] colsDic = {"Palabra Reservada", "Equivalente en Java", "Ejemplo de uso"};
+        Object[][] dataDic = {
+            {"perro",   "int",                   "nombre perro e 5;"},
+            {"gato",    "double",                "nombre gato e 3.14;"},
+            {"pez",     "String",                "nombre pez e \"texto\";"},
+            {"aguila",  "if",                    "aguila(condicion){ ... }"},
+            {"topo",    "else",                  "topo{ ... }"},
+            {"e",       "=",                     "nombre e valor;"},
+            {"print",   "System.out.print()",    "print(\"texto\");"},
+            {"println", "System.out.println()",  "println(\"texto\");"}
+        };
+        JTable tablaDiccionario = new JTable(new DefaultTableModel(dataDic, colsDic) {
+            public boolean isCellEditable(int row, int col) { return false; }
+        });
+        tablaDiccionario.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        tablaDiccionario.getTableHeader().setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        tablaDiccionario.setRowHeight(22);
+        tablaDiccionario.setFillsViewportHeight(true);
+        tablaDiccionario.setShowGrid(true);
+        tablaDiccionario.setGridColor(new Color(210, 210, 210));
+        tablaDiccionario.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int col) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
+                if (!isSelected) setBackground(row % 2 == 0 ? Color.WHITE : ROW_ALT);
+                return this;
+            }
+        });
+        tablaDiccionario.getColumnModel().getColumn(0).setPreferredWidth(130);
+        tablaDiccionario.getColumnModel().getColumn(1).setPreferredWidth(180);
+        tablaDiccionario.getColumnModel().getColumn(2).setPreferredWidth(220);
+
+        JTabbedPane rightTabs = new JTabbedPane();
+        rightTabs.addTab("Tabla de Tokens", tokensPanel);
+        rightTabs.addTab("Gramatica", new JScrollPane(gramaticaOutput));
+        rightTabs.addTab("Diccionario", new JScrollPane(tablaDiccionario));
 
         // ─── Split horizontal superior ───────────────────────────────────────
-        JSplitPane topSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
+        JSplitPane topSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightTabs);
         topSplit.setResizeWeight(0.4);
         topSplit.setDividerSize(5);
 
@@ -185,6 +226,7 @@ public class InterfazGrafica extends JFrame {
         modeloTabla.setRowCount(0);
         consoleOutput.setText("");
         resultadosOutput.setText("");
+        gramaticaOutput.setText("");
 
         if (codigo.isEmpty()) {
             resultadosOutput.setText("Editor vacio. Escribe codigo primero.");
@@ -206,7 +248,11 @@ public class InterfazGrafica extends JFrame {
             AnalizadorSemantico semantico = new AnalizadorSemantico();
             semantico.analizar(ast);
 
-            // Fase 4: Ejecucion
+            // Fase 4: Gramatica
+            GeneradorGramatica generador = new GeneradorGramatica();
+            gramaticaOutput.setText(generador.generar(ast));
+
+            // Fase 5: Ejecucion
             Interprete interprete = new Interprete();
             String salidaPrograma = interprete.ejecutar(ast);
 
@@ -262,14 +308,10 @@ public class InterfazGrafica extends JFrame {
             case ENTERO:         return "'" + v + "' es palabra reservada  →  tipo perro (int)";
             case DECIMAL:        return "'" + v + "' es palabra reservada  →  tipo gato (double)";
             case CADENA_TIPO:    return "'" + v + "' es palabra reservada  →  tipo pez (String)";
-            case BOOLEANO:       return "'" + v + "' es palabra reservada  →  tipo boolean";
-            case SI:             return "'" + v + "' es palabra reservada  →  condicional if";
-            case SINO:           return "'" + v + "' es palabra reservada  →  condicional else";
-            case MIENTRAS:       return "'" + v + "' es palabra reservada  →  bucle while";
+            case SI:             return "'" + v + "' es palabra reservada  →  condicional aguila (if)";
+            case SINO:           return "'" + v + "' es palabra reservada  →  condicional topo (else)";
             case PRINT:          return "'" + v + "' es palabra reservada  →  salida sin salto de linea";
             case PRINTLN:        return "'" + v + "' es palabra reservada  →  salida con salto de linea";
-            case LIT_VERDADERO:  return "'" + v + "' es literal booleano verdadero";
-            case LIT_FALSO:      return "'" + v + "' es literal booleano falso";
             case ASIGNACION:     return "'" + v + "' es operador de asignacion";
             case IDENTIFICADOR:  return "'" + v + "' es identificador (variable)";
             case LIT_ENTERO:     return "'" + v + "' es literal entero";
@@ -308,16 +350,12 @@ public class InterfazGrafica extends JFrame {
             case ENTERO:
             case DECIMAL:
             case CADENA_TIPO:
-            case BOOLEANO:
             case SI:
             case SINO:
-            case MIENTRAS:
             case PRINT:
             case PRINTLN:
-            case LIT_VERDADERO:
-            case LIT_FALSO:
             case ASIGNACION:     return "palabra reservada";
-            case IDENTIFICADOR:  return "[a-z]";
+            case IDENTIFICADOR:  return "[a-z+]";
             case LIT_ENTERO:     return "^(0-9)[1,10]$";
             case LIT_DECIMAL:    return "^(0-9)[1,10]\\.(0-9)[1,8]$";
             case LIT_CADENA:     return "^\"[a,z 0-9]+\"$";

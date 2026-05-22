@@ -170,7 +170,7 @@ public class AnalizadorLexico {
         }
 
         if (!hayMas())
-            throw new ErrorCadenaNoTerminada(lin, col);
+            return new Token(TipoToken.LIT_CADENA, sb.toString(), lin, col);
 
         consumir(); // consume la comilla de cierre "
         return new Token(TipoToken.LIT_CADENA, sb.toString(), lin, col);
@@ -194,20 +194,14 @@ public class AnalizadorLexico {
             case "perro":   return new Token(TipoToken.ENTERO,       pal, lin, col);
             case "gato":    return new Token(TipoToken.DECIMAL,      pal, lin, col);
             case "pez":     return new Token(TipoToken.CADENA_TIPO,  pal, lin, col);
-            case "boolean": return new Token(TipoToken.BOOLEANO,     pal, lin, col);
 
             // Control de flujo
-            case "if":      return new Token(TipoToken.SI,           pal, lin, col);
-            case "else":    return new Token(TipoToken.SINO,         pal, lin, col);
-            case "while":   return new Token(TipoToken.MIENTRAS,     pal, lin, col);
+            case "aguila":  return new Token(TipoToken.SI,           pal, lin, col);
+            case "topo":    return new Token(TipoToken.SINO,         pal, lin, col);
 
             // Salida
             case "print":   return new Token(TipoToken.PRINT,   pal, lin, col);
             case "println": return new Token(TipoToken.PRINTLN, pal, lin, col);
-
-            // Literales booleanos
-            case "true":    return new Token(TipoToken.LIT_VERDADERO, pal, lin, col);
-            case "false":   return new Token(TipoToken.LIT_FALSO,     pal, lin, col);
 
             // Operador de asignacion
             case "e":       return new Token(TipoToken.ASIGNACION,    pal, lin, col);

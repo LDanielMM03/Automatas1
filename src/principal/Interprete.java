@@ -48,15 +48,6 @@ public class Interprete {
                 ejecutarBloque(si.getCuerpoFalso());
             return;
         }
-        if (nodo instanceof NodoMientras) {
-            NodoMientras m = (NodoMientras) nodo;
-            int limite = 100_000;
-            while ((Boolean) evaluar(m.getCondicion())) {
-                if (--limite < 0) throw new RuntimeException("Bucle infinito detectado");
-                ejecutarBloque(m.getCuerpo());
-            }
-            return;
-        }
         if (nodo instanceof NodoMostrar) {
             NodoMostrar m = (NodoMostrar) nodo;
             Object val = evaluar(m.getExpresion());
@@ -179,7 +170,6 @@ public class Interprete {
             case "perro":   return 0;
             case "gato":    return 0.0;
             case "pez":     return "";
-            case "boolean": return false;
             default:        return null;
         }
     }

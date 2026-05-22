@@ -53,11 +53,6 @@ public class AnalizadorSemantico {
             return "void";
         }
 
-        if (nodo instanceof NodoMientras) {
-            analizarMientras((NodoMientras) nodo);
-            return "void";
-        }
-
         if (nodo instanceof NodoBloque) {
             analizarBloque((NodoBloque) nodo);
             return "void";
@@ -132,23 +127,10 @@ public class AnalizadorSemantico {
         String tipoCond = analizarNodo(nodo.getCondicion());
 
         if (!tipoCond.equals("boolean"))
-            throw new ErrorCondicionNoBoolena("if", tipoCond, nodo.getLinea(), nodo.getColumna());
+            throw new ErrorCondicionNoBoolena("aguila", tipoCond, nodo.getLinea(), nodo.getColumna());
 
         analizarBloque(nodo.getCuerpoVerdad());
         if (nodo.tieneSino()) analizarBloque(nodo.getCuerpoFalso());
-    }
-
-    // =========================================================================
-    //  While
-    // =========================================================================
-
-    private void analizarMientras(NodoMientras nodo) throws ErrorSemantico {
-        String tipoCond = analizarNodo(nodo.getCondicion());
-
-        if (!tipoCond.equals("boolean"))
-            throw new ErrorCondicionNoBoolena("while", tipoCond, nodo.getLinea(), nodo.getColumna());
-
-        analizarBloque(nodo.getCuerpo());
     }
 
     // =========================================================================

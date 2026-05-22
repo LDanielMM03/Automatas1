@@ -16,12 +16,11 @@ import java.util.List;
  * Gramatica del lenguaje:
  *
  *   programa     -> sentencia* EOF
- *   sentencia    -> declaracion | asignacion | if_stmt | while_stmt | println_stmt
- *   declaracion  -> tipo IDENTIFICADOR ('e' expresion)? ';'
- *   tipo         -> 'perro' | 'gato' | 'Pez' | 'boolean'
+ *   sentencia    -> declaracion | asignacion | if_stmt | println_stmt
+ *   declaracion  -> IDENTIFICADOR tipo ('e' expresion)? ';'
+ *   tipo         -> 'perro' | 'gato' | 'pez' | 'boolean'
  *   asignacion   -> IDENTIFICADOR 'e' expresion ';'
- *   if_stmt      -> 'if' '(' expresion ')' bloque ('else' bloque)?
- *   while_stmt   -> 'while' '(' expresion ')' bloque
+ *   if_stmt      -> 'aguila' '(' expresion ')' bloque ('topo' bloque)?
  *   println_stmt -> 'System.out.println' '(' expresion ')' ';'
  *   bloque       -> '{' sentencia* '}'
  *   expresion    -> logica
@@ -72,7 +71,14 @@ public class AnalizadorSintactico {
     private boolean esTipoDeVariable() {
         TipoToken t = actual().getTipo();
         return t == TipoToken.ENTERO  || t == TipoToken.DECIMAL ||
-               t == TipoToken.CADENA_TIPO || t == TipoToken.BOOLEANO;
+               t == TipoToken.CADENA_TIPO;
+    }
+
+    private boolean siguienteEsTipo() {
+        if (posicion + 1 >= tokens.size()) return false;
+        TipoToken t = tokens.get(posicion + 1).getTipo();
+        return t == TipoToken.ENTERO  || t == TipoToken.DECIMAL ||
+               t == TipoToken.CADENA_TIPO;
     }
 
     // =========================================================================
@@ -96,10 +102,11 @@ public class AnalizadorSintactico {
     // =========================================================================
 
     private Nodo parsearSentencia() throws ErrorSintactico {
-        if (esTipoDeVariable())              return parsearDeclaracion();
-        if (verifica(TipoToken.IDENTIFICADOR)) return parsearAsignacion();
-        if (verifica(TipoToken.SI))            return parsearSi();
-        if (verifica(TipoToken.MIENTRAS))      return parsearMientras();
+        if (verifica(TipoToken.IDENTIFICADOR)) {
+            if (siguienteEsTipo()) return parsearDeclaracion();
+            return parsearAsignacion();
+        }
+        if (verifica(TipoToken.SI))       return parsearSi();
         if (verifica(TipoToken.PRINT) || verifica(TipoToken.PRINTLN)) return parsearMostrar();
 
         Token t = actual();
@@ -109,12 +116,12 @@ public class AnalizadorSintactico {
     // ─── Declaracion ─────────────────────────────────────────────────────────
 
     private NodoDeclaracion parsearDeclaracion() throws ErrorSintactico {
-        Token tipoTok = consumir();                      // consume tipo
-        int lin = tipoTok.getLinea(), col = tipoTok.getColumna();
-        String tipo = tipoTok.getValor();
-
         Token nombreTok = consumir(TipoToken.IDENTIFICADOR, "nombre de variable");
+        int lin = nombreTok.getLinea(), col = nombreTok.getColumna();
         String nombre   = nombreTok.getValor();
+
+        Token tipoTok = consumir();                      // consume tipo (validado por lookahead)
+        String tipo = tipoTok.getValor();
 
         Nodo expresion = null;
         if (verifica(TipoToken.ASIGNACION)) {
@@ -147,10 +154,14 @@ public class AnalizadorSintactico {
     // ─── If / Else ───────────────────────────────────────────────────────────
 
     private NodoSi parsearSi() throws ErrorSintactico {
-        Token siTok = consumir(TipoToken.SI, "'if'");
+        Token siTok = consumir(TipoToken.SI, "'aguila'");
         int lin = siTok.getLinea(), col = siTok.getColumna();
 
-        consumir(TipoToken.PARENTESIS_IZQ, "'(' despues de 'if'");
+        consumir(TipoToken.PARENTESIS_IZQ, "'(' despues de 'aguila'");
+        if (verifica(TipoToken.PARENTESIS_DER)) {
+            Token t = actual();
+            throw new ErrorSintactico("Falta la condicion en 'aguila'", t.getLinea(), t.getColumna());
+        }
         Nodo condicion = parsearExpresion();
         consumir(TipoToken.PARENTESIS_DER, "')' despues de condicion");
 
@@ -163,20 +174,6 @@ public class AnalizadorSintactico {
         }
 
         return new NodoSi(condicion, cuerpoVerdad, cuerpoFalso, lin, col);
-    }
-
-    // ─── While ───────────────────────────────────────────────────────────────
-
-    private NodoMientras parsearMientras() throws ErrorSintactico {
-        Token mTok = consumir(TipoToken.MIENTRAS, "'while'");
-        int lin = mTok.getLinea(), col = mTok.getColumna();
-
-        consumir(TipoToken.PARENTESIS_IZQ, "'(' despues de 'while'");
-        Nodo condicion = parsearExpresion();
-        consumir(TipoToken.PARENTESIS_DER, "')' despues de condicion");
-
-        NodoBloque cuerpo = parsearBloque();
-        return new NodoMientras(condicion, cuerpo, lin, col);
     }
 
     // ─── print / println ─────────────────────────────────────────────────────
@@ -314,14 +311,6 @@ public class AnalizadorSintactico {
                 consumir();
                 return new NodoLiteral(t.getValor(), "pez",
                                        t.getLinea(), t.getColumna());
-
-            case LIT_VERDADERO:
-                consumir();
-                return new NodoLiteral(true, "boolean", t.getLinea(), t.getColumna());
-
-            case LIT_FALSO:
-                consumir();
-                return new NodoLiteral(false, "boolean", t.getLinea(), t.getColumna());
 
             case IDENTIFICADOR:
                 consumir();

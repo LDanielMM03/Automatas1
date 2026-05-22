@@ -6,14 +6,11 @@ public enum TipoToken {
     ENTERO,          // perro   (reemplaza a int)
     DECIMAL,         // gato    (reemplaza a double)
     CADENA_TIPO,     // pez     (reemplaza a String)
-    BOOLEANO,        // boolean
 
     // ── Literales ─────────────────────────────────────────────────────────────
     LIT_ENTERO,      // 42
     LIT_DECIMAL,     // 3.14
     LIT_CADENA,      // "hola mundo"
-    LIT_VERDADERO,   // true
-    LIT_FALSO,       // false
 
     // ── Identificador ─────────────────────────────────────────────────────────
     IDENTIFICADOR,   // nombre de variable
@@ -42,9 +39,8 @@ public enum TipoToken {
     NO,              // !
 
     // ── Control de flujo ──────────────────────────────────────────────────────
-    SI,              // if
-    SINO,            // else
-    MIENTRAS,        // while
+    SI,              // aguila
+    SINO,            // topo
 
     // ── Entrada / Salida ──────────────────────────────────────────────────────
     PRINT,           // print   (sin salto de linea)
